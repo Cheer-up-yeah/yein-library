@@ -705,7 +705,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged
+    signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged,
+    setPersistence, browserLocalPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, collection, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc,
@@ -725,6 +726,7 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  setPersistence(auth, browserLocalPersistence).catch((e)=> console.error('세션 저장 방식 설정 실패', e));
 
   const CATEGORIES = ['희곡', '시나리오', '드라마', '연기 이론', '그 외'];
 
