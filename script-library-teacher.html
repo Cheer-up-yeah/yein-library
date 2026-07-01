@@ -705,7 +705,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider
+    signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, collection, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc,
@@ -1008,6 +1008,39 @@
     }
   });
 
+  async function initSessionForUser(user){
+    try{
+      const profileSnap = await getDoc(doc(db, 'users', user.uid));
+      if(!profileSnap.exists() || profileSnap.data().role !== 'teacher'){
+        await signOut(auth);
+        currentUser = null;
+        show('view-login');
+        return;
+      }
+      const profile = profileSnap.data();
+      currentUser = { uid: user.uid, name: profile.name, username: profile.username, phone: profile.phone };
+      document.getElementById('whoami-name').textContent = profile.name;
+      activeCategory = '전체';
+      switchView('status');
+      renderCatTabs();
+      listenAll();
+      show('view-home');
+    } catch(e){
+      currentUser = null;
+      show('view-login');
+    }
+  }
+
+  onAuthStateChanged(auth, (user)=>{
+    if(user){
+      initSessionForUser(user);
+    } else {
+      stopListening();
+      currentUser = null;
+      show('view-login');
+    }
+  });
+
   document.getElementById('btn-login').addEventListener('click', async ()=>{
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
@@ -1022,21 +1055,8 @@
     btn.disabled = true;
 
     try{
-      const cred = await signInWithEmailAndPassword(auth, username + EMAIL_DOMAIN, password);
-      const profileSnap = await getDoc(doc(db, 'users', cred.user.uid));
-      if(!profileSnap.exists() || profileSnap.data().role !== 'teacher'){
-        await signOut(auth);
-        err.textContent = '선생님 계정이 아닙니다.';
-        return;
-      }
-      const profile = profileSnap.data();
-      currentUser = { uid: cred.user.uid, name: profile.name, username: profile.username, phone: profile.phone };
-      document.getElementById('whoami-name').textContent = profile.name;
-      activeCategory = '전체';
-      switchView('status');
-      renderCatTabs();
-      listenAll();
-      show('view-home');
+      await signInWithEmailAndPassword(auth, username + EMAIL_DOMAIN, password);
+      // onAuthStateChanged picks up from here: loads the profile and shows 대출홈
     } catch(e){
       err.textContent = '아이디 또는 비밀번호가 일치하지 않습니다.';
     } finally {
