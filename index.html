@@ -1150,6 +1150,7 @@
         await addDoc(collection(db, 'reviews'), {
           bookTitle: book.title,
           reviewer: anon ? '익명' : currentUser.name,
+          authorName: currentUser.name,
           authorUid: currentUser.uid,
           isAnon: anon,
           text,
